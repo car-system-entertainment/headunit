@@ -25,7 +25,7 @@
 enum HU_STATE
 {
   hu_STATE_INITIAL = 0,
-  hu_STATE_STARTIN  = 1,
+  hu_STATE_STARTIN = 1,
   hu_STATE_STARTED = 2,
   hu_STATE_STOPPIN = 3,
   hu_STATE_STOPPED = 4,
@@ -187,6 +187,7 @@ public:
   //Must be called from the "main" thread (as defined by the user)
   int hu_aap_start    (bool waitForDevice, bool waitForDeviceReconnect);
   int hu_aap_shutdown ();
+  HU_STATE hu_app_get_state();
 
   HUServer(IHUConnectionThreadEventCallbacks& callbacks, std::map<std::string, std::string>);
   virtual ~HUServer() { hu_aap_shutdown(); }

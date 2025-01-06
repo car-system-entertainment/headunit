@@ -264,64 +264,102 @@ gboolean VideoOutput::sdl_poll_event() {
     return TRUE;
 }
 
+// VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks) {
+//     GstBus *bus;
+
+//     GError *error = NULL;
+
+//     const char* vid_launch_str = "appsrc name=mysrc is-live=true block=false max-latency=100000 do-timestamp=true stream-type=stream typefind=true ! "
+//                                  "queue ! "
+//                                  "h264parse ! "
+//                                  "avdec_h264 ! "
+//         #if ASPECT_RATIO_FIX
+//                                  "videocrop top=16 bottom=15 ! "
+//         #endif
+//                                  "videoscale name=myconvert ! "
+//                                  "videoconvert ! "
+//                                  "ximagesink name=mysink";
+//     vid_pipeline = gst_parse_launch(vid_launch_str, &error);
+
+//     bus = gst_pipeline_get_bus(GST_PIPELINE(vid_pipeline));
+//     gst_bus_add_watch(bus, (GstBusFunc) bus_callback, &gst_app);
+//     gst_object_unref(bus);
+
+//     vid_src = GST_APP_SRC(gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysrc"));
+
+//     gst_app_src_set_stream_type(vid_src, GST_APP_STREAM_TYPE_STREAM);
+
+
+//     window = SDL_CreateWindow("Android Auto",
+//                               SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+//                           #if ASPECT_RATIO_FIX
+//                               //emulate the CMU stretching
+//                               (int) (853 * g_dpi_scalefactor), (int) (480 * g_dpi_scalefactor),
+//                           #else
+//                               (int) (800 * g_dpi_scalefactor), (int) (480 * g_dpi_scalefactor),
+//                           #endif
+//                               SDL_WINDOW_SHOWN);
+
+//     SDL_SysWMinfo wmInfo;
+//     SDL_VERSION(&wmInfo.version);
+//     SDL_GetWindowWMInfo(window, &wmInfo);
+
+//     GstVideoOverlay* sink = GST_VIDEO_OVERLAY(gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysink"));
+//     gst_video_overlay_set_window_handle(sink, wmInfo.info.x11.window);
+//     //Let SDL do the key events, etc
+//     gst_video_overlay_handle_events(sink, FALSE);
+//     gst_object_unref(sink);
+
+//     //Don't use SDL's weird cursor, too small on HiDPI
+//     XUndefineCursor(wmInfo.info.x11.display, wmInfo.info.x11.window);
+
+//     timeout_src = g_timeout_source_new(100);
+//     g_source_set_priority(timeout_src, G_PRIORITY_HIGH);
+//     g_source_set_callback(timeout_src, &sdl_poll_event_wrapper, (gpointer)this, NULL);
+//     g_source_attach(timeout_src, NULL);
+
+//     gst_element_set_state(vid_pipeline, GST_STATE_PLAYING);
+// }
+
 VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks) {
     GstBus *bus;
-
     GError *error = NULL;
 
+    // Pipeline com udpsink para transmitir o fluxo
     const char* vid_launch_str = "appsrc name=mysrc is-live=true block=false max-latency=100000 do-timestamp=true stream-type=stream typefind=true ! "
                                  "queue ! "
                                  "h264parse ! "
-                                 "avdec_h264 ! "
-        #if ASPECT_RATIO_FIX
-                                 "videocrop top=16 bottom=15 ! "
-        #endif
-                                 "videoscale name=myconvert ! "
-                                 "videoconvert ! "
-                                 "ximagesink name=mysink";
-    vid_pipeline = gst_parse_launch(vid_launch_str, &error);
+                                 "rtph264pay config-interval=1 pt=96 ! "  // Configuração RTP
+                                 "udpsink host=127.0.0.1 port=5000 sync=false"; // Transmissão UDP
 
+    // Cria a pipeline a partir da string de lançamento
+    vid_pipeline = gst_parse_launch(vid_launch_str, &error);
+    if (error) {
+        loge("Error creating pipeline: %s\n", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    // Configuração do bus para monitorar mensagens do pipeline
     bus = gst_pipeline_get_bus(GST_PIPELINE(vid_pipeline));
-    gst_bus_add_watch(bus, (GstBusFunc) bus_callback, &gst_app);
+    gst_bus_add_watch(bus, (GstBusFunc)bus_callback, &gst_app);
     gst_object_unref(bus);
 
+    // Obtém o elemento appsrc da pipeline
     vid_src = GST_APP_SRC(gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysrc"));
+    if (!vid_src) {
+        loge("Failed to retrieve appsrc element\n");
+        return;
+    }
 
+    // Configura o appsrc como um fluxo
     gst_app_src_set_stream_type(vid_src, GST_APP_STREAM_TYPE_STREAM);
 
-
-    window = SDL_CreateWindow("Android Auto",
-                              SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                          #if ASPECT_RATIO_FIX
-                              //emulate the CMU stretching
-                              (int) (853 * g_dpi_scalefactor), (int) (480 * g_dpi_scalefactor),
-                          #else
-                              (int) (800 * g_dpi_scalefactor), (int) (480 * g_dpi_scalefactor),
-                          #endif
-                              SDL_WINDOW_SHOWN);
-
-    SDL_SysWMinfo wmInfo;
-    SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(window, &wmInfo);
-
-    GstVideoOverlay* sink = GST_VIDEO_OVERLAY(gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysink"));
-    gst_video_overlay_set_window_handle(sink, wmInfo.info.x11.window);
-    //Let SDL do the key events, etc
-    gst_video_overlay_handle_events(sink, FALSE);
-    gst_object_unref(sink);
-
-    //Don't use SDL's weird cursor, too small on HiDPI
-    XUndefineCursor(wmInfo.info.x11.display, wmInfo.info.x11.window);
-
-    timeout_src = g_timeout_source_new(100);
-    g_source_set_priority(timeout_src, G_PRIORITY_HIGH);
-    g_source_set_callback(timeout_src, &sdl_poll_event_wrapper, (gpointer)this, NULL);
-    g_source_attach(timeout_src, NULL);
-
+    // Define o estado da pipeline para PLAYING
     gst_element_set_state(vid_pipeline, GST_STATE_PLAYING);
-
-    SendNightMode();
 }
+
+
 
 VideoOutput::~VideoOutput()
 {
@@ -336,8 +374,8 @@ VideoOutput::~VideoOutput()
     g_source_unref(timeout_src);
     timeout_src = nullptr;
 
-    SDL_DestroyWindow(window);
-    window = nullptr;
+    // SDL_DestroyWindow(window);
+    // window = nullptr;
 }
 
 void VideoOutput::MediaPacket(uint64_t timestamp, const byte *buf, int len) {
@@ -348,6 +386,31 @@ void VideoOutput::MediaPacket(uint64_t timestamp, const byte *buf, int len) {
         printf("push buffer returned %d for %d bytes \n", ret, len);
     }
 }
+
+// void VideoOutput::MediaPacket(uint64_t timestamp, const byte *buf, int len) {
+//     // Verifica argumentos
+//     if (!buf || len <= 0) {
+//         printf("Invalid buffer or length: buf=%p, len=%d\n", buf, len);
+//         return;
+//     }
+
+//     // Cria um novo buffer GStreamer
+//     GstBuffer *buffer = gst_buffer_new_and_alloc(len);
+//     gst_buffer_fill(buffer, 0, buf, len);
+
+//     // Configura timestamps no buffer para sincronização
+//     GST_BUFFER_PTS(buffer) = timestamp;  // Presentation Timestamp
+//     GST_BUFFER_DTS(buffer) = timestamp;  // Decode Timestamp
+//     GST_BUFFER_DURATION(buffer) = GST_CLOCK_TIME_NONE;  // Duração indefinida (opcional)
+
+//     // Empurra o buffer para o appsrc
+//     int ret = gst_app_src_push_buffer(vid_src, buffer);
+//     if (ret != GST_FLOW_OK) {
+//         printf("push buffer returned %d for %d bytes \n", ret, len);
+//         gst_buffer_unref(buffer);  // Libera o buffer em caso de falha
+//     }
+// }
+
 
 void VideoOutput::SendNightMode()
 {

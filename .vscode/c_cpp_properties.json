@@ -3,15 +3,18 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
+                "${default}",
+                "${workspaceFolder}/hu",
+                "${workspaceFolder}/hu/generated.x64",
                 "/usr/include/glib-2.0",
-                "/usr/include/gtk-3.0"
+                "/usr/include/gstreamer-1.0",
+                "${workspaceFolder}/common"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "gnu17",
-            "cppStandard": "gnu++14",
-            "intelliSenseMode": "linux-gcc-x64"
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
         }
     ],
     "version": 4

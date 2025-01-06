@@ -14,6 +14,7 @@
 #include "main.h"
 #include "outputs.h"
 #include "callbacks.h"
+#include "server.h"
 
 gst_app_t gst_app;
 
@@ -21,8 +22,7 @@ float g_dpi_scalefactor = 1.2f;
 
 IHUAnyThreadInterface* g_hu = nullptr;
 
-uint64_t
-get_cur_timestamp() {
+uint64_t get_cur_timestamp() {
         struct timespec tp;
         /* Fetch the time stamp */
         clock_gettime(CLOCK_REALTIME, &tp);
@@ -30,16 +30,12 @@ get_cur_timestamp() {
         return tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
 }
 
-static int
-gst_loop(gst_app_t *app) {
+static int gst_loop(gst_app_t *app) {
         int ret;
         GstStateChangeReturn state_ret;
 
         app->loop = g_main_loop_new(NULL, FALSE);
-        printf("Starting Android Auto.................\n");
         g_main_loop_run(app->loop);
-        printf("aqui...");
-
         return ret;
 }
 
@@ -62,69 +58,68 @@ int main(int argc, char *argv[]) {
                 printf("Got gdk_screen_get_monitor_scale_factor() == %f\n", g_dpi_scalefactor);
         }
 #else
-        printf("Using hard coded scalefactor\n");
         g_dpi_scalefactor = 1;
 #endif
         gst_app_t *app = &gst_app;
         int ret = 0;
         errno = 0;
+        pthread_t server_thread;
 
         gst_init(NULL, NULL);
         struct sigaction action;
         sigaction(SIGINT, NULL, &action);
+
         if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
             SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
             return 1;
         }
 
         sigaction(SIGINT, &action, NULL);
+        
+        DesktopEventCallbacks callbacks;
+        HUServer headunit(callbacks, settings);
 
-        DesktopCommandServerCallbacks commandCallbacks;
-        CommandServer commandServer(commandCallbacks);
-        if (!commandServer.Start())
-        {
-            loge("Command server failed to start");
+        if (pthread_create(&server_thread, NULL, event_command_server, &headunit) != 0) {
+            perror("Failed to create thread");
+            return EXIT_FAILURE;
         }
 
         //loop to emulate the caar
         while(true)
         {
-            DesktopEventCallbacks callbacks;
-            HUServer headunit(callbacks, settings);
-
             /* Start AA processing */
             ret = headunit.hu_aap_start(true, true);
 
             if (ret < 0) {
-                    printf("Phone is not connected. Connect a supported phone and restart.\n");
-                    return 0;
+                printf("Phone is not connected. Connect a supported phone and restart.\n");
+                continue;
+                // return 0;
             }
 
             callbacks.connected = true;
-
             g_hu = &headunit.GetAnyThreadInterface();
-            commandCallbacks.eventCallbacks = &callbacks;
 
               /* Start gstreamer pipeline and main loop */
             ret = gst_loop(app);
             if (ret < 0) {
-                    printf("STATUS:gst_loop() ret: %d\n", ret);
+                printf("STATUS:gst_loop() ret: %d\n", ret);
             }
 
             callbacks.connected = false;
-            commandCallbacks.eventCallbacks = nullptr;
 
             /* Stop AA processing */
             ret = headunit.hu_aap_shutdown();
             if (ret < 0) {
-                    printf("STATUS:hu_aap_stop() ret: %d\n", ret);
-                    SDL_Quit();
-                    return (ret);
+                printf("STATUS:hu_aap_stop() ret: %d\n", ret);
+                SDL_Quit();
+                return (ret);
             }
 
             g_hu = nullptr;
         }
-
+        
+        pthread_cancel(server_thread);
+        pthread_join(server_thread, NULL);
         SDL_Quit();
 
         return (ret);

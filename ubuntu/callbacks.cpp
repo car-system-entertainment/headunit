@@ -43,14 +43,12 @@ int DesktopEventCallbacks::MediaStop(int chan) {
 }
 
 void DesktopEventCallbacks::MediaSetupComplete(int chan) {
-    printf("media setup complete \n");
     if (chan == AA_CH_VID) {
         VideoFocusHappened(true, VIDEO_FOCUS_REQUESTOR::HEADUNIT);
     }
 }
 
 void DesktopEventCallbacks::DisconnectionOrError() {
-    printf("DisconnectionOrError\n");
     g_main_loop_quit(gst_app.loop);
 }
 
@@ -86,7 +84,7 @@ void DesktopEventCallbacks::AudioFocusRequest(int chan, const HU::AudioFocusRequ
 }
 
 void DesktopEventCallbacks::VideoFocusRequest(int chan, const HU::VideoFocusRequest &request) {
-    VideoFocusHappened(request.mode() == HU::VIDEO_FOCUS_MODE_FOCUSED, VIDEO_FOCUS_REQUESTOR::ANDROID_AUTO);
+    // VideoFocusHappened(request.mode() == HU::VIDEO_FOCUS_MODE_FOCUSED, VIDEO_FOCUS_REQUESTOR::ANDROID_AUTO);
 }
 
 std::string DesktopEventCallbacks::GetCarBluetoothAddress()
@@ -105,8 +103,6 @@ void DesktopEventCallbacks::ShowingGenericNotifications(IHUConnectionThreadInter
 */
 
 void DesktopEventCallbacks::VideoFocusHappened(bool hasFocus, VIDEO_FOCUS_REQUESTOR videoFocusRequestor) {
-    printf("Chamando video callback.. \n");
-
     run_on_main_thread([this, hasFocus, videoFocusRequestor](){
         if ((bool)videoOutput != hasFocus) {
             videoOutput.reset(hasFocus ? new VideoOutput(this) : nullptr);

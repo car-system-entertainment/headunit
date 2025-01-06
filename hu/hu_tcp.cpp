@@ -130,7 +130,6 @@
     return (tcp_so_fd);
   }
 
-
   int HUTransportStreamTCP::itcp_init () {
 
     int net_port = 30515;
@@ -208,7 +207,6 @@
     logd ("  SET: itcp_state: %d (%s)", itcp_state, state_get (itcp_state));
     return (ret);
   }
-
 
   int HUTransportStreamTCP::Start(bool waitForDevice, bool waitForDeviceReconnect) {
     int ret = 0;

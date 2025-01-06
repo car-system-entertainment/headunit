@@ -9,6 +9,7 @@
 #include <memory>
 #include <iostream>
 #include <endian.h>
+#include <stdlib.h>
 #include <google/protobuf/descriptor.h>
 
   const char * state_get (int state) {
@@ -38,32 +39,31 @@
       //Defaults
       std::map<std::string, std::string> default_settings;
 
-      default_settings["head_unit_name"] = "Computer";
-      default_settings["car_model"] = "libheadunit";
-      default_settings["car_year"] = "2017";
+      default_settings["head_unit_name"] = "VW";
+      default_settings["car_model"] = "Gol G5";
+      default_settings["car_year"] = "2011";
       default_settings["car_serial"] = "007";
       default_settings["driver_pos"] = "1";//bool
-      default_settings["headunit_make"] = "libhu";
-      default_settings["headunit_model"] = "libheadunit";
+      default_settings["headunit_make"] = "alison";
+      default_settings["headunit_model"] = "almeida";
       default_settings["sw_build"] = "SWB1";
       default_settings["sw_version"] = "SWV1";
       default_settings["can_play_native_media_during_vr"] = "0";//bool
       default_settings["hide_clock"] = "0";//bool
       default_settings["ts_width"] = "800";
       default_settings["ts_height"] = "480";
-      default_settings["resolution"] = "1";//800x480 = 1, 1280x720 = 2, 1920x1080 = 3
-      default_settings["frame_rate"] = "1";//30 FPS = 1, 60 FPS = 2
+      default_settings["resolution"] = "2";//800x480 = 1, 1280x720 = 2, 1920x1080 = 3
+      default_settings["frame_rate"] = "2";//30 FPS = 1, 60 FPS = 2
       default_settings["margin_width"] = "0";
       default_settings["margin_height"] = "0";
-      default_settings["dpi"] = "140";
+      default_settings["dpi"] = "210";
       default_settings["available_while_in_call"] = "0";//bool
       default_settings["transport_type"] = "usb"; // "usb" or "network"
-      default_settings["network_address"] = "127.0.0.1";
+      default_settings["network_address"] = "192.168.0.3";
       default_settings["wifi_direct"] = "0";
 
       settings.insert(default_settings.begin(), default_settings.end());
   }
-
 
   int HUServer::ihu_tra_start (bool waitForDevice, bool waitForDeviceReconnect) {
     std::map<std::string, std::string> conf;
@@ -170,7 +170,6 @@
       logd ("OK ihu_tra_send() ret: %d  len: %d", ret, len);
     return (ret);
   }
-
 
   int HUServer::hu_aap_enc_send_message(int retry, int chan, uint16_t messageCode, const google::protobuf::MessageLite& message, int overrideTimeout)
   {
@@ -303,7 +302,7 @@
     return (0);
   }
 
- int HUServer::hu_aap_unenc_send (int retry,int chan, byte * buf, int len, int overrideTimeout) {                 // Encrypt data and send: type,...
+  int HUServer::hu_aap_unenc_send (int retry,int chan, byte * buf, int len, int overrideTimeout) {                 // Encrypt data and send: type,...
     if (iaap_state != hu_STATE_STARTED && iaap_state != hu_STATE_STARTIN) {
       logw ("CHECK: iaap_state: %d (%s)", iaap_state, state_get (iaap_state));
       //logw ("chan: %d  len: %d  buf: %p", chan, len, buf);
@@ -404,7 +403,6 @@
     //hex_dump("PB:", 80, temp_assembly_buffer->data(), requiredSize);
     return hu_aap_unenc_send(retry, chan, temp_assembly_buffer->data(), requiredSize, overrideTimeout);
   }
-
 
   int HUServer::hu_handle_VersionResponse (int chan, byte * buf, int len) {
 
@@ -623,7 +621,6 @@
     return hu_aap_enc_send_message(0, chan, HU_PROTOCOL_MESSAGE::ServiceDiscoveryResponse, carInfo);
   }
 
-
   int HUServer::hu_handle_PingRequest (int chan, byte * buf, int len) {                  // Ping Request
     HU::PingRequest request;
     if (!request.ParseFromArray(buf, len))
@@ -682,7 +679,6 @@
     return (0);
   }
 
-
   int HUServer::hu_handle_AudioFocusRequest (int chan, byte * buf, int len) {                  // Navigation Focus Request
     HU::AudioFocusRequest request;
     if (!request.ParseFromArray(buf, len))
@@ -720,8 +716,6 @@
   }
 
   int HUServer::hu_handle_MediaSetupRequest(int chan, byte * buf, int len) {
-    printf("handle media setup complete \n");
-
     HU::MediaSetupRequest request;
     if (!request.ParseFromArray(buf, len))
       loge ("MediaSetupRequest");
@@ -743,10 +737,7 @@
     return (ret);
   }
 
-
   int HUServer::hu_handle_VideoFocusRequest(int chan, byte * buf, int len) {
-    printf("video focus request.. \n");
-
     HU::VideoFocusRequest request;
     if (!request.ParseFromArray(buf, len))
       loge ("VideoFocusRequest");
@@ -757,7 +748,6 @@
 
     return 0;
   }
-
 
   int HUServer::hu_handle_MediaStartRequest(int chan, byte * buf, int len) {                  // sr:  00000000 00 11 08 01      Microphone voice search usage     sr:  00000000 00 11 08 02
 
@@ -771,7 +761,6 @@
     return callbacks.MediaStart(chan);
    }
 
-
   int HUServer::hu_handle_MediaStopRequest(int chan, byte * buf, int len) {                  // sr:  00000000 00 11 08 01      Microphone voice search usage     sr:  00000000 00 11 08 02
 
     HU::MediaStopRequest request;
@@ -783,7 +772,6 @@
     channel_session_id[chan] = 0;
     return callbacks.MediaStop(chan);
   }
-
 
   int HUServer::hu_handle_SensorStartRequest (int chan, byte * buf, int len) {                  // Navigation Focus Request
     HU::SensorStartRequest request;
@@ -797,7 +785,6 @@
 
     return hu_aap_enc_send_message(0, chan, HU_SENSOR_CHANNEL_MESSAGE::SensorStartResponse, response);
   }
-
 
   int HUServer::hu_handle_BindingRequest (int chan, byte * buf, int len) {                  // Navigation Focus Request
     HU::BindingRequest request;
@@ -987,7 +974,7 @@
       return 0;
   }
 
-    int HUServer::hu_handle_NaviTurn(int chan, byte * buf, int len) {
+  int HUServer::hu_handle_NaviTurn(int chan, byte * buf, int len) {
       HU::NAVTurnMessage request;
       if (!request.ParseFromArray(buf, len))
       {
@@ -1003,7 +990,7 @@
       return 0;
     }
 
-    int HUServer::hu_handle_NaviTurnDistance(int chan, byte * buf, int len) {
+  int HUServer::hu_handle_NaviTurnDistance(int chan, byte * buf, int len) {
       HU::NAVDistanceMessage request;
       if (!request.ParseFromArray(buf, len))
       {
@@ -1346,6 +1333,10 @@
     iaap_state = hu_STATE_STOPPED;
   }
 
+  HU_STATE HUServer::hu_app_get_state() {
+    return iaap_state;
+  }
+
   static_assert(PIPE_BUF >= sizeof(IHUAnyThreadInterface::HUThreadCommand*), "PIPE_BUF is tool small for a pointer?");
 
   int HUServer::hu_aap_start (bool waitForDevice, bool waitForDeviceReconnect) {                // Starts Transport/USBACC/OAP, then AA protocol w/ VersReq(1), SSL handshake, Auth Complete
@@ -1408,11 +1399,6 @@
     if (iaap_state != hu_STATE_STARTED && iaap_state != hu_STATE_STARTIN) {
       loge ("CHECK: iaap_state: %d (%s)", iaap_state, state_get (iaap_state));
       return (-1);
-    }
-
-    if (message < 100){
-      printf("novo dado chegou.. \n");
-      message ++;
     }
 
     int ret = 0;

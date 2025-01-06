@@ -32,7 +32,7 @@ static unsigned char AAP_VAL_SERIAL[] =  "HU-AAAAAA001";
 
 #define ACC_IDX_MAN    0   // Manufacturer
 #define ACC_IDX_MOD    1   // Model
-#define ACC_IDX_DESC   2  // Model
+#define ACC_IDX_DESC   2   // Model
 #define ACC_IDX_VER    3   // Model
 #define ACC_IDX_URI    4   // Model
 #define ACC_IDX_SERIAL 5   // Model
@@ -217,7 +217,6 @@ int HUTransportStreamUSB::Stop() {
   return 0;
 }
 
-
 void HUTransportStreamUSB::usb_recv_thread_main()
 {
   pthread_setname_np(pthread_self(), "usb_recv_thread_main");
@@ -248,7 +247,6 @@ void HUTransportStreamUSB::usb_recv_thread_main()
   if(write(error_write_fd, &errData, sizeof(errData)) < 0) {
       loge("Error when writing to error_write_fd");
   }
-
 }
 
 void HUTransportStreamUSB::libusb_callback(libusb_transfer *transfer)
@@ -307,7 +305,6 @@ void HUTransportStreamUSB::libusb_callback_tramp(libusb_transfer *transfer)
   reinterpret_cast<HUTransportStreamUSB*>(transfer->user_data)->libusb_callback(transfer);
 }
 
-
 void HUTransportStreamUSB::libusb_callback_send(libusb_transfer *transfer)
 {
   logd("libusb_callback_send %d %d %d", transfer->status, LIBUSB_TRANSFER_COMPLETED, LIBUSB_TRANSFER_OVERFLOW);
@@ -327,7 +324,6 @@ void HUTransportStreamUSB::libusb_callback_send_tramp(libusb_transfer *transfer)
 {
   reinterpret_cast<HUTransportStreamUSB*>(transfer->user_data)->libusb_callback_send(transfer);
 }
-
 
 int HUTransportStreamUSB::start_usb_recv()
 {

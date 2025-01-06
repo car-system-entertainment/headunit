@@ -219,7 +219,7 @@
 
   }
 
-    int HUServer::hu_handle_SSLHandshake(int chan, byte * buf, int len)
+  int HUServer::hu_handle_SSLHandshake(int chan, byte * buf, int len)
   {
       int ret = BIO_write (hu_ssl_rm_bio, buf, len);          // Write to the BIO Server response
       if (ret <= 0) {

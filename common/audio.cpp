@@ -1,4 +1,5 @@
 #include "audio.h"
+#include <stdio.h>
 
 AudioOutput::AudioOutput(const char *outDev)
 {
@@ -7,6 +8,7 @@ AudioOutput::AudioOutput(const char *outDev)
     int err = 0;
     if ((err = snd_pcm_open(&aud_handle, outDev, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
         loge("Playback open error: %s\n", snd_strerror(err));
+        printf("erro ao abrir device name %s\n", outDev);
     }
     if ((err = snd_pcm_set_params(aud_handle, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 2,48000, 1, 1000000)) < 0) {   /* 1.0sec */
         loge("Playback open error: %s\n", snd_strerror(err));
