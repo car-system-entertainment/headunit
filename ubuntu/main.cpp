@@ -47,19 +47,7 @@ int main(int argc, char *argv[]) {
 
         hu_log_library_versions();
         // hu_install_crash_handler();
-#if defined GDK_VERSION_3_10
-        printf("GTK VERSION 3.10.0 or higher\n");
-        //Assuming we are on Gnome, what's the DPI scale factor?
-        gdk_init(&argc, &argv);
 
-        GdkScreen * primaryDisplay = gdk_screen_get_default();
-        if (primaryDisplay) {
-                g_dpi_scalefactor = (float) gdk_screen_get_monitor_scale_factor(primaryDisplay, 0);
-                printf("Got gdk_screen_get_monitor_scale_factor() == %f\n", g_dpi_scalefactor);
-        }
-#else
-        g_dpi_scalefactor = 1;
-#endif
         gst_app_t *app = &gst_app;
         int ret = 0;
         errno = 0;
@@ -68,12 +56,6 @@ int main(int argc, char *argv[]) {
         gst_init(NULL, NULL);
         struct sigaction action;
         sigaction(SIGINT, NULL, &action);
-
-        if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-            SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
-            return 1;
-        }
-
         sigaction(SIGINT, &action, NULL);
         
         DesktopEventCallbacks callbacks;
@@ -111,7 +93,6 @@ int main(int argc, char *argv[]) {
             ret = headunit.hu_aap_shutdown();
             if (ret < 0) {
                 printf("STATUS:hu_aap_stop() ret: %d\n", ret);
-                SDL_Quit();
                 return (ret);
             }
 
@@ -120,7 +101,6 @@ int main(int argc, char *argv[]) {
         
         pthread_cancel(server_thread);
         pthread_join(server_thread, NULL);
-        SDL_Quit();
 
         return (ret);
 }

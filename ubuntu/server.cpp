@@ -87,6 +87,8 @@ void *event_command_server(void *arg) {
         exit(EXIT_FAILURE);
     }
 
+    printf("TCP server started\n");
+
     while (1) {
         // Aceitando uma nova conexão
         if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
@@ -114,16 +116,19 @@ void *event_command_server(void *arg) {
 
                     // mouse down
                     if (touch_event.action == 0x01) {
+                        printf("mouse press event: dx -> %f, dy -> %f\n", touch_event.pos_x, touch_event.pos_y);
                         aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_PRESS, &touch_event);
                     }
                     // mouse release
                     else if (touch_event.action == 0x02)
                     {
+                        printf("mouse release event: dx -> %f, dy -> %f\n", touch_event.pos_x, touch_event.pos_y);
                         aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_RELEASE, &touch_event);
                     }
                     //mouse drag
                     else if (touch_event.action == 0x03)
                     {
+                        printf("mouse drag event: dx -> %f, dy -> %f\n", touch_event.pos_x, touch_event.pos_y);
                         aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_DRAG, &touch_event);
                     }
                 }
