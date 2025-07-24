@@ -71,7 +71,7 @@ void DesktopEventCallbacks::AudioFocusRequest(int chan, const HU::AudioFocusRequ
             audioFocus = false;
         } else {
             if (!audioOutput) {
-                audioOutput.reset(new AudioOutput());
+                audioOutput.reset(new PulseAudioOutput());
             }
             response.set_focus_type(HU::AudioFocusResponse::AUDIO_FOCUS_STATE_GAIN);
             audioFocus = true;

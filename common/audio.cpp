@@ -71,6 +71,64 @@ void AudioOutput::MediaPacket(snd_pcm_t *pcm, const byte *buf, int len)
     }
 }
 
+PulseAudioOutput::PulseAudioOutput(const char* outDev)
+{
+    // Configuração do stream 1: estéreo, 48kHz
+    pa_sample_spec au1_handle_config = {
+        .format = PA_SAMPLE_S16LE,
+        .rate = 48000,
+        .channels = 2
+    };
+
+    // Configuração do stream 2: mono, 16kHz
+    pa_sample_spec au2_handle_config = {
+        .format = PA_SAMPLE_S16LE,
+        .rate = 16000,
+        .channels = 1
+    };
+
+    // create main device output 
+    au1_handle = pa_simple_new(NULL, "PulseAudioOutput", PA_STREAM_PLAYBACK, NULL, "main", &au1_handle_config, NULL, NULL, &error);
+    if (au1_handle == NULL) {
+        loge("pa_simple_new failed: %s\n", error);
+    }
+
+    au2_handle = pa_simple_new(NULL, "PulseAudioOutput", PA_STREAM_PLAYBACK, NULL, "voice", &au2_handle_config, NULL, NULL, &error);
+    if (au2_handle == NULL) {
+        loge("pa_simple_new failed: %s\n", error);
+    }
+}
+
+PulseAudioOutput::~PulseAudioOutput()
+{
+    if (au1_handle) pa_simple_free(au1_handle);
+    if (au2_handle) pa_simple_free(au2_handle);
+}
+
+void PulseAudioOutput::MediaPacketAUD(uint64_t timestamp, const byte *buf, int len)
+{
+    //Do we need the timestamp?
+    if (au1_handle)
+    {
+        MediaPacket(au1_handle, buf, len);
+    }
+}
+
+void PulseAudioOutput::MediaPacketAU1(uint64_t timestamp, const byte *buf, int len)
+{
+    if (au2_handle)
+    {
+        MediaPacket(au2_handle, buf, len);
+    }
+}
+
+void PulseAudioOutput::MediaPacket(pa_simple* stream, const byte * buf, int len)
+{
+    if (pa_simple_write(stream, buf, len, &error) < 0) {
+        loge("Error to write stream: %s\n", error);
+    }
+}
+
 snd_pcm_sframes_t MicInput::read_mic_cancelable(snd_pcm_t* mic_handle, void *buffer, snd_pcm_uframes_t size, bool* canceled)
 {
     int pollfdAllocCount = snd_pcm_poll_descriptors_count(mic_handle);

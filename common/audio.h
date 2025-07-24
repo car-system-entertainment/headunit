@@ -1,6 +1,8 @@
 #pragma once
 #include <asoundlib.h>
 #include <thread>
+#include <pulse/simple.h>
+#include <pulse/error.h>
 
 #include "hu_uti.h"
 #include "hu_aap.h"
@@ -14,6 +16,22 @@ class AudioOutput
 public:
     AudioOutput(const char* outDev = "default");
     ~AudioOutput();
+
+    void MediaPacketAUD(uint64_t timestamp, const byte * buf, int len);
+    void MediaPacketAU1(uint64_t timestamp, const byte * buf, int len);
+};
+
+class PulseAudioOutput : public AudioOutput
+{
+    pa_simple* au1_handle = nullptr;
+    pa_simple* au2_handle = nullptr;
+    int error = 0;
+
+    void MediaPacket(pa_simple* stream, const byte * buf, int len);
+
+public:
+    PulseAudioOutput(const char* outDev = "default");
+    ~PulseAudioOutput();
 
     void MediaPacketAUD(uint64_t timestamp, const byte * buf, int len);
     void MediaPacketAU1(uint64_t timestamp, const byte * buf, int len);
