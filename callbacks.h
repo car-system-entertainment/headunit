@@ -1,12 +1,10 @@
 #pragma once
 
 #include <atomic>
-
-#include "main.h"
+#include <gst/gst.h>
 #include "audio.h"
 #include "command_server.h"
-
-#include <asoundlib.h>
+#include <gst/app/gstappsink.h>
 
 class VideoOutput;
 class AudioOutput;
@@ -45,6 +43,8 @@ public:
         std::atomic<bool> connected;
         std::atomic<bool> videoFocus;
         std::atomic<bool> audioFocus;
+        std::function<GstFlowReturn(GstAppSink*)>frameCallback;
+        GstBusFunc gst_bus_callback;
 };
 
 class DesktopCommandServerCallbacks : public ICommandServerCallbacks

@@ -1,7 +1,4 @@
 #pragma once
-
-#include <glib.h>
-#include <stdio.h>
 #include <asoundlib.h>
 #include <thread>
 

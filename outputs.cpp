@@ -1,9 +1,7 @@
 #include "outputs.h"
 #include "main.h"
 
-static /* Print all information about a key event */
-void
-PrintKeyInfo(SDL_KeyboardEvent *key) {
+static void  PrintKeyInfo(SDL_KeyboardEvent *key) {
         /* Is it a release or a press? */
         if (key->type == SDL_KEYUP)
                 printf("Release:- ");
@@ -44,6 +42,7 @@ gboolean VideoOutput::bus_callback(GstBus *bus, GstMessage *message, gpointer *p
 
         gst_message_parse_error(message, &err, &debug);
         g_print("Error %s\n", err->message);
+        printf("error: %s\n", err->message);
         g_error_free(err);
         g_free(debug);
         g_main_loop_quit(app->loop);
@@ -58,6 +57,7 @@ gboolean VideoOutput::bus_callback(GstBus *bus, GstMessage *message, gpointer *p
 
         gst_message_parse_warning(message, &err, &debug);
         g_print("Warning %s\nDebug %s\n", err->message, debug);
+        printf("Warning %s\n", err->message);
 
         name = (gchar *) GST_MESSAGE_SRC_NAME(message);
 
@@ -69,16 +69,73 @@ gboolean VideoOutput::bus_callback(GstBus *bus, GstMessage *message, gpointer *p
 
     case GST_MESSAGE_EOS:
         g_print("End of stream\n");
+        printf("End of stream\n");
         g_main_loop_quit(app->loop);
         break;
 
     case GST_MESSAGE_STATE_CHANGED:
+        printf("pipeline state change: \n");
         break;
 
     default:
-        //                     g_print("got message %s\n", \
-        gst_message_type_get_name (GST_MESSAGE_TYPE (message)));
         break;
+    }
+
+    return TRUE;
+}
+
+gboolean VideoOutput::wrapper_lvgl_bus_callback(GstBus *bus, GstMessage *message, gpointer *ptr) {
+    return reinterpret_cast<VideoOutput*>(ptr)->lvgl_bus_callback(bus, message);
+}
+
+gboolean VideoOutput::lvgl_bus_callback(GstBus *bus, GstMessage *message) {
+
+    switch (GST_MESSAGE_TYPE(message)) {
+
+        case GST_MESSAGE_ERROR:
+        {
+            gchar *debug;
+            GError *err;
+
+            gst_message_parse_error(message, &err, &debug);
+            g_print("Error %s\n", err->message);
+            printf("error: %s\n", err->message);
+            g_error_free(err);
+            g_free(debug);
+            g_main_loop_quit(gst_app.loop);
+        }
+        break;
+
+        case GST_MESSAGE_WARNING:
+        {
+            gchar *debug;
+            GError *err;
+            gchar *name;
+
+            gst_message_parse_warning(message, &err, &debug);
+            g_print("Warning %s\nDebug %s\n", err->message, debug);
+            printf("Warning %s\n", err->message);
+
+            name = (gchar *) GST_MESSAGE_SRC_NAME(message);
+
+            g_print("Name of src %s\n", name ? name : "nil");
+            g_error_free(err);
+            g_free(debug);
+        }
+        break;
+
+        case GST_MESSAGE_EOS:
+            g_print("End of stream\n");
+        printf("End of stream\n");
+        g_main_loop_quit(gst_app.loop);
+        break;
+
+        case GST_MESSAGE_STATE_CHANGED:
+            printf("pipeline state change: \n");
+        break;
+
+        default:
+            break;
     }
 
     return TRUE;
@@ -118,7 +175,16 @@ void VideoOutput::aa_touch_event(SDL_Window *window, HU::TouchInfo::TOUCH_ACTION
 }
 
 gboolean VideoOutput::sdl_poll_event_wrapper(gpointer data){
-    return reinterpret_cast<VideoOutput*>(data)->sdl_poll_event();
+    // return reinterpret_cast<VideoOutput*>(data)->sdl_poll_event();
+    return GST_FLOW_OK;
+}
+
+GstFlowReturn VideoOutput::lvgl_poll_event_wrapper(GstElement *sink, gpointer data) {
+    return static_cast<VideoOutput*>(data)->lvgl_poll_event(sink);
+}
+
+GstFlowReturn VideoOutput::lvgl_poll_event(GstElement *sink) {
+    return callbacks->frameCallback(reinterpret_cast<GstAppSink*>(sink));
 }
 
 gboolean VideoOutput::sdl_poll_event() {
@@ -254,8 +320,6 @@ gboolean VideoOutput::sdl_poll_event() {
         }
     }
 
-
-
     if (nightmode != nightmodenow) {
        nightmode = nightmodenow;
        SendNightMode();
@@ -266,9 +330,45 @@ gboolean VideoOutput::sdl_poll_event() {
 
 // VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks) {
 //     GstBus *bus;
+//     GError *error = nullptr;
+//     const char* vid_launch_str = "appsrc name=mysrc is-live=true block=false max-latency=100000 do-timestamp=true stream-type=stream typefind=true ! "
+//                                  "queue ! "
+//                                  "h264parse ! "
+//                                  "avdec_h264 ! "
+//                                  "videoscale name=myconvert ! "
+//                                  "videoconvert ! "
+//                                  "video/x-raw,format=BGR,width=1024,height=535 ! "
+//                                  "appsink name=mysink";
 
+//     vid_pipeline = gst_parse_launch(vid_launch_str, &error);
+
+//     if (vid_pipeline == NULL) {
+//         printf("Failed to create pipeline: %s\n", error->message);
+//         return;
+//     }
+
+//     bus = gst_pipeline_get_bus(GST_PIPELINE(vid_pipeline));
+//     gst_bus_add_watch(bus, (GstBusFunc)wrapper_lvgl_bus_callback, this);
+//     gst_object_unref(bus);
+
+//     vid_src = GST_APP_SRC(gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysrc"));
+//     gst_app_src_set_stream_type(vid_src, GST_APP_STREAM_TYPE_STREAM);
+
+//     GstAppSink *app_sink = (GstAppSink*) gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysink");
+//     g_object_set(app_sink, "emit-signals", TRUE, NULL);
+//     g_signal_connect(app_sink, "new-sample", G_CALLBACK(lvgl_poll_event_wrapper), this);
+
+//     timeout_src = g_timeout_source_new(100);
+//     g_source_set_priority(timeout_src, G_PRIORITY_HIGH);
+//     g_source_attach(timeout_src, nullptr);
+//     g_source_set_callback(timeout_src, &sdl_poll_event_wrapper, (gpointer)this, NULL);
+
+//     gst_element_set_state(vid_pipeline, GST_STATE_PLAYING);
+// }
+
+// VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks) {
 //     GError *error = NULL;
-
+//
 //     const char* vid_launch_str = "appsrc name=mysrc is-live=true block=false max-latency=100000 do-timestamp=true stream-type=stream typefind=true ! "
 //                                  "queue ! "
 //                                  "h264parse ! "
@@ -280,16 +380,16 @@ gboolean VideoOutput::sdl_poll_event() {
 //                                  "videoconvert ! "
 //                                  "ximagesink name=mysink";
 //     vid_pipeline = gst_parse_launch(vid_launch_str, &error);
-
-//     bus = gst_pipeline_get_bus(GST_PIPELINE(vid_pipeline));
-//     gst_bus_add_watch(bus, (GstBusFunc) bus_callback, &gst_app);
+//
+//     GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(vid_pipeline));
+//     gst_bus_add_watch(bus, reinterpret_cast<GstBusFunc>(bus_callback), &gst_app);
 //     gst_object_unref(bus);
-
+//
 //     vid_src = GST_APP_SRC(gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysrc"));
-
+//
 //     gst_app_src_set_stream_type(vid_src, GST_APP_STREAM_TYPE_STREAM);
-
-
+//
+//
 //     window = SDL_CreateWindow("Android Auto",
 //                               SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 //                           #if ASPECT_RATIO_FIX
@@ -299,25 +399,25 @@ gboolean VideoOutput::sdl_poll_event() {
 //                               (int) (800 * g_dpi_scalefactor), (int) (480 * g_dpi_scalefactor),
 //                           #endif
 //                               SDL_WINDOW_SHOWN);
-
+//
 //     SDL_SysWMinfo wmInfo;
 //     SDL_VERSION(&wmInfo.version);
 //     SDL_GetWindowWMInfo(window, &wmInfo);
-
+//
 //     GstVideoOverlay* sink = GST_VIDEO_OVERLAY(gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysink"));
 //     gst_video_overlay_set_window_handle(sink, wmInfo.info.x11.window);
 //     //Let SDL do the key events, etc
 //     gst_video_overlay_handle_events(sink, FALSE);
 //     gst_object_unref(sink);
-
+//
 //     //Don't use SDL's weird cursor, too small on HiDPI
 //     XUndefineCursor(wmInfo.info.x11.display, wmInfo.info.x11.window);
-
+//
 //     timeout_src = g_timeout_source_new(100);
 //     g_source_set_priority(timeout_src, G_PRIORITY_HIGH);
 //     g_source_set_callback(timeout_src, &sdl_poll_event_wrapper, (gpointer)this, NULL);
 //     g_source_attach(timeout_src, NULL);
-
+//
 //     gst_element_set_state(vid_pipeline, GST_STATE_PLAYING);
 // }
 
@@ -359,8 +459,6 @@ VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks
     gst_element_set_state(vid_pipeline, GST_STATE_PLAYING);
 }
 
-
-
 VideoOutput::~VideoOutput()
 {
     gst_element_set_state(vid_pipeline, GST_STATE_NULL);
@@ -373,9 +471,6 @@ VideoOutput::~VideoOutput()
     g_source_destroy(timeout_src);
     g_source_unref(timeout_src);
     timeout_src = nullptr;
-
-    // SDL_DestroyWindow(window);
-    // window = nullptr;
 }
 
 void VideoOutput::MediaPacket(uint64_t timestamp, const byte *buf, int len) {
@@ -386,31 +481,6 @@ void VideoOutput::MediaPacket(uint64_t timestamp, const byte *buf, int len) {
         printf("push buffer returned %d for %d bytes \n", ret, len);
     }
 }
-
-// void VideoOutput::MediaPacket(uint64_t timestamp, const byte *buf, int len) {
-//     // Verifica argumentos
-//     if (!buf || len <= 0) {
-//         printf("Invalid buffer or length: buf=%p, len=%d\n", buf, len);
-//         return;
-//     }
-
-//     // Cria um novo buffer GStreamer
-//     GstBuffer *buffer = gst_buffer_new_and_alloc(len);
-//     gst_buffer_fill(buffer, 0, buf, len);
-
-//     // Configura timestamps no buffer para sincronização
-//     GST_BUFFER_PTS(buffer) = timestamp;  // Presentation Timestamp
-//     GST_BUFFER_DTS(buffer) = timestamp;  // Decode Timestamp
-//     GST_BUFFER_DURATION(buffer) = GST_CLOCK_TIME_NONE;  // Duração indefinida (opcional)
-
-//     // Empurra o buffer para o appsrc
-//     int ret = gst_app_src_push_buffer(vid_src, buffer);
-//     if (ret != GST_FLOW_OK) {
-//         printf("push buffer returned %d for %d bytes \n", ret, len);
-//         gst_buffer_unref(buffer);  // Libera o buffer em caso de falha
-//     }
-// }
-
 
 void VideoOutput::SendNightMode()
 {

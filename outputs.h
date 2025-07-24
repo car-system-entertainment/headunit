@@ -1,16 +1,9 @@
 #pragma once
 
 #include <glib.h>
-#include <stdio.h>
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
-#include <gst/app/gstappsink.h>
-#include <gst/video/videooverlay.h>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
-#include <time.h>
-#include <glib-unix.h>
-
 //This gets defined by SDL and breaks the protobuf headers
 #undef Status
 
@@ -34,10 +27,16 @@ class VideoOutput {
     DesktopEventCallbacks* callbacks;
 
     static gboolean bus_callback(GstBus *bus, GstMessage *message, gpointer *ptr);
+    static gboolean wrapper_lvgl_bus_callback(GstBus *bus, GstMessage *message, gpointer *ptr);
+
     static void aa_touch_event(SDL_Window* window, HU::TouchInfo::TOUCH_ACTION action, unsigned int x, unsigned int y);
     static gboolean sdl_poll_event_wrapper(gpointer data);
+    static GstFlowReturn lvgl_poll_event_wrapper(GstElement *sink, gpointer data);
+    gboolean lvgl_bus_callback(GstBus *bus, GstMessage *message);
 
     gboolean sdl_poll_event();
+    GstFlowReturn lvgl_poll_event(GstElement *sink);
+
 public:
     VideoOutput(DesktopEventCallbacks* callbacks);
     ~VideoOutput();

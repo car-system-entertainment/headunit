@@ -2,6 +2,7 @@
 #include "outputs.h"
 #include "glib_utils.h"
 #include "bt/ub_bluetooth.h"
+#include "main.h"
 
 DesktopEventCallbacks::DesktopEventCallbacks() :
     connected(false),

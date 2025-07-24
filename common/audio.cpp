@@ -1,11 +1,12 @@
 #include "audio.h"
-#include <stdio.h>
+#include <cstdio>
 
 AudioOutput::AudioOutput(const char *outDev)
 {
     printf("snd_asoundlib_version: %s\n", snd_asoundlib_version());
     logd("Device name %s\n", outDev);
     int err = 0;
+
     if ((err = snd_pcm_open(&aud_handle, outDev, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
         loge("Playback open error: %s\n", snd_strerror(err));
         printf("erro ao abrir device name %s\n", outDev);

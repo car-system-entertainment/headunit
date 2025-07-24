@@ -1,0 +1,4 @@
+/home/soundsensor-1485/Projetos/car_multimedia/lv_car_multimedia/lib/headunit/CMakeFiles/proto.dir
+/home/soundsensor-1485/Projetos/car_multimedia/lv_car_multimedia/lib/headunit/CMakeFiles/headunit.dir
+/home/soundsensor-1485/Projetos/car_multimedia/lv_car_multimedia/lib/headunit/CMakeFiles/edit_cache.dir
+/home/soundsensor-1485/Projetos/car_multimedia/lv_car_multimedia/lib/headunit/CMakeFiles/rebuild_cache.dir

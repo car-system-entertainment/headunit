@@ -56,6 +56,15 @@ int main(int argc, char *argv[]) {
         gst_init(NULL, NULL);
         struct sigaction action;
         sigaction(SIGINT, NULL, &action);
+        if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+            SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
+            return 1;
+        }
+
+        sigaction(SIGINT, &action, NULL);
+
+        gst_init(NULL, NULL);
+        sigaction(SIGINT, NULL, &action);
         sigaction(SIGINT, &action, NULL);
         
         DesktopEventCallbacks callbacks;
@@ -93,6 +102,7 @@ int main(int argc, char *argv[]) {
             ret = headunit.hu_aap_shutdown();
             if (ret < 0) {
                 printf("STATUS:hu_aap_stop() ret: %d\n", ret);
+                SDL_Quit();
                 return (ret);
             }
 
@@ -101,6 +111,7 @@ int main(int argc, char *argv[]) {
         
         pthread_cancel(server_thread);
         pthread_join(server_thread, NULL);
+		SDL_Quit();
 
         return (ret);
 }

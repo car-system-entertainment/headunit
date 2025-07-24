@@ -47,10 +47,11 @@ HU_STATE aa_get_status(HUServer *headunit) {
     return headunit->hu_app_get_state();
 }
 
-void *event_command_server(void *arg) {
-    HUServer *headunit = (HUServer *)arg;
+void *event_command_server(void *args) {
+    HUServer *headunit = (HUServer*) args;
     int server_fd, new_socket;
     struct sockaddr_in address;
+
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[BUFFER_SIZE] = {0};

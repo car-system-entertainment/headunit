@@ -3,7 +3,7 @@
 #include <glib.h>
 #include <functional>
 
-#include "hu_aap.h"
+#include "hu/hu_aap.h"
 
 struct gst_app_t {
         GMainLoop *loop;
