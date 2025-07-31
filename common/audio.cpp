@@ -74,19 +74,24 @@ void AudioOutput::MediaPacket(snd_pcm_t *pcm, const byte *buf, int len)
 GstAudioOutput::GstAudioOutput(const char *outDev)
 {
     printf("GStreamer version: %s\n", gst_version_string());
+
     const char *pipeline_str = 
-        "appsrc name=source1 caps=\"audio/x-raw,format=S16LE,channels=2,rate=48000\" ! "
+        "appsrc name=source1 is-live=true block=false do-timestamp=true ! "
+        "audio/x-raw,format=S16LE,channels=2,rate=48000,layout=interleaved ! "
         "volume name=vol1 ! "
         "audioconvert ! "
         "audioresample ! "
+        "queue max-size-buffers=0 max-size-time=0 max-size-bytes=0 ! "
         "audiomixer name=mixer ! "
         "audioconvert ! "
-        "audioresample ! "
-        "autoaudiosink name=sink "
-        "appsrc name=source2 caps=\"audio/x-raw,format=S16LE,channels=1,rate=16000\" ! "
+        "autoaudiosink sync=false "
+
+        "appsrc name=source2 is-live=true block=false do-timestamp=true ! "
+        "audio/x-raw,format=S16LE,channels=1,rate=16000,layout=interleaved ! "
         "volume name=vol2 ! "
         "audioconvert ! "
         "audioresample ! "
+        "queue max-size-buffers=0 max-size-time=0 max-size-bytes=0 ! "
         "mixer.";
 
     GError *error = nullptr;
@@ -103,13 +108,29 @@ GstAudioOutput::GstAudioOutput(const char *outDev)
     volume_aud = gst_bin_get_by_name(GST_BIN(pipeline), "vol1");
     volume_au1 = gst_bin_get_by_name(GST_BIN(pipeline), "vol2");
     
-    // sink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
-    // mixer = gst_bin_get_by_name(GST_BIN(pipeline), "mixer");
+    g_object_set(appsrc_aud,
+        "stream-type", 0, // GST_APP_STREAM_TYPE_STREAM
+        "format", GST_FORMAT_TIME,
+        "is-live", TRUE,
+        "block", TRUE,
+        nullptr
+    );
+
+    g_object_set(appsrc_au1,
+        "stream-type", 0, // GST_APP_STREAM_TYPE_STREAM
+        "format", GST_FORMAT_TIME,
+        "is-live", TRUE,
+        "block", TRUE,
+        nullptr
+    );
 
     GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
     if (ret == GST_STATE_CHANGE_FAILURE) {
         printf("Unable to set the pipeline to the playing state\n");
     }
+
+    SetVolumeAUD(1.0);
+    SetVolumeAUD1(1.0);
 }
 
 void GstAudioOutput::SetVolumeAUD(double volume) {
