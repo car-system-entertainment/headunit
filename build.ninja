@@ -172,7 +172,7 @@ build CMakeFiles/headunit.dir/main.cpp.o: CXX_COMPILER__headunit_unscanned_ /hom
 
 build headunit: CXX_EXECUTABLE_LINKER__headunit_ CMakeFiles/headunit.dir/hu/hu_aap.cpp.o CMakeFiles/headunit.dir/hu/hu_aad.cpp.o CMakeFiles/headunit.dir/hu/hu_ssl.cpp.o CMakeFiles/headunit.dir/hu/hu_usb.cpp.o CMakeFiles/headunit.dir/hu/hu_uti.cpp.o CMakeFiles/headunit.dir/hu/hu_tcp.cpp.o CMakeFiles/headunit.dir/hu/generated.x64/hu.pb.cc.o CMakeFiles/headunit.dir/common/audio.cpp.o CMakeFiles/headunit.dir/common/glib_utils.cpp.o CMakeFiles/headunit.dir/common/command_server.cpp.o CMakeFiles/headunit.dir/common/web++/web++.cpp.o CMakeFiles/headunit.dir/bt/ub_bluetooth.cpp.o CMakeFiles/headunit.dir/outputs.cpp.o CMakeFiles/headunit.dir/callbacks.cpp.o CMakeFiles/headunit.dir/server.cpp.o CMakeFiles/headunit.dir/main.cpp.o || proto
   FLAGS = -g -rdynamic -pthread -Wno-unused-parameter -Wno-narrowing
-  LINK_LIBRARIES = -lgstapp-1.0  -lgstvideo-1.0  -lgstaudio-1.0  -lgstcodecparsers-1.0  -lgstbase-1.0  -lgstreamer-1.0  -lusb-1.0  -lssl  -lcrypto  -lgtk-3  -lgdk-3  -lz  -lpangocairo-1.0  -lpango-1.0  -lharfbuzz  -latk-1.0  -lcairo-gobject  -lcairo  -lgdk_pixbuf-2.0  -lgio-2.0  -lgobject-2.0  -lglib-2.0  -lX11  -lprotobuf  -lSDL2  -ludev  -lasound  -ldl  -lpthread
+  LINK_LIBRARIES = -lgstapp-1.0  -lgstvideo-1.0  -lgstaudio-1.0  -lgstcodecparsers-1.0  -lgstbase-1.0  -lgstreamer-1.0  -lusb-1.0  -lssl  -lcrypto  -lgtk-3  -lgdk-3  -lz  -lpangocairo-1.0  -lpango-1.0  -lharfbuzz  -latk-1.0  -lcairo-gobject  -lcairo  -lgdk_pixbuf-2.0  -lgio-2.0  -lgobject-2.0  -lglib-2.0  -lX11  -lprotobuf  -lSDL2  -ludev  -lasound  -lpulse-simple  -lpulse  -ldl  -lpthread
   OBJECT_DIR = CMakeFiles/headunit.dir
   POST_BUILD = :
   PRE_LINK = :

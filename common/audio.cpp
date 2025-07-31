@@ -4,7 +4,7 @@
 AudioOutput::AudioOutput(const char *outDev)
 {
     printf("snd_asoundlib_version: %s\n", snd_asoundlib_version());
-    logd("Device name %s\n", outDev);
+    logw("Device name %s\n", outDev);
     int err = 0;
 
     if ((err = snd_pcm_open(&aud_handle, outDev, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
@@ -39,7 +39,7 @@ AudioOutput::~AudioOutput()
 
 void AudioOutput::MediaPacketAUD(uint64_t timestamp, const byte *buf, int len)
 {
-    //Do we need the timestamp?
+    // Do we need the timestamp?
     if (aud_handle)
     {
         MediaPacket(aud_handle, buf, len);
@@ -71,61 +71,104 @@ void AudioOutput::MediaPacket(snd_pcm_t *pcm, const byte *buf, int len)
     }
 }
 
-PulseAudioOutput::PulseAudioOutput(const char* outDev)
+GstAudioOutput::GstAudioOutput(const char *outDev)
 {
-    // Configuração do stream 1: estéreo, 48kHz
-    pa_sample_spec au1_handle_config = {
-        .format = PA_SAMPLE_S16LE,
-        .rate = 48000,
-        .channels = 2
-    };
+    printf("GStreamer version: %s\n", gst_version_string());
+    const char *pipeline_str = 
+        "appsrc name=source1 caps=\"audio/x-raw,format=S16LE,channels=2,rate=48000\" ! "
+        "volume name=vol1 ! "
+        "audioconvert ! "
+        "audioresample ! "
+        "audiomixer name=mixer ! "
+        "audioconvert ! "
+        "audioresample ! "
+        "autoaudiosink name=sink "
+        "appsrc name=source2 caps=\"audio/x-raw,format=S16LE,channels=1,rate=16000\" ! "
+        "volume name=vol2 ! "
+        "audioconvert ! "
+        "audioresample ! "
+        "mixer.";
 
-    // Configuração do stream 2: mono, 16kHz
-    pa_sample_spec au2_handle_config = {
-        .format = PA_SAMPLE_S16LE,
-        .rate = 16000,
-        .channels = 1
-    };
+    GError *error = nullptr;
+    pipeline = gst_parse_launch(pipeline_str, &error);
 
-    // create main device output 
-    au1_handle = pa_simple_new(NULL, "PulseAudioOutput", PA_STREAM_PLAYBACK, NULL, "main", &au1_handle_config, NULL, NULL, &error);
-    if (au1_handle == NULL) {
-        loge("pa_simple_new failed: %s\n", error);
+    if (error) {
+        printf("Failed to create pipeline: %s\n", error->message);
+        g_error_free(error);
     }
 
-    au2_handle = pa_simple_new(NULL, "PulseAudioOutput", PA_STREAM_PLAYBACK, NULL, "voice", &au2_handle_config, NULL, NULL, &error);
-    if (au2_handle == NULL) {
-        loge("pa_simple_new failed: %s\n", error);
-    }
-}
+    appsrc_aud = gst_bin_get_by_name(GST_BIN(pipeline), "source1");
+    appsrc_au1 = gst_bin_get_by_name(GST_BIN(pipeline), "source2");
 
-PulseAudioOutput::~PulseAudioOutput()
-{
-    if (au1_handle) pa_simple_free(au1_handle);
-    if (au2_handle) pa_simple_free(au2_handle);
-}
+    volume_aud = gst_bin_get_by_name(GST_BIN(pipeline), "vol1");
+    volume_au1 = gst_bin_get_by_name(GST_BIN(pipeline), "vol2");
+    
+    // sink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
+    // mixer = gst_bin_get_by_name(GST_BIN(pipeline), "mixer");
 
-void PulseAudioOutput::MediaPacketAUD(uint64_t timestamp, const byte *buf, int len)
-{
-    //Do we need the timestamp?
-    if (au1_handle)
-    {
-        MediaPacket(au1_handle, buf, len);
+    GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
+    if (ret == GST_STATE_CHANGE_FAILURE) {
+        printf("Unable to set the pipeline to the playing state\n");
     }
 }
 
-void PulseAudioOutput::MediaPacketAU1(uint64_t timestamp, const byte *buf, int len)
-{
-    if (au2_handle)
-    {
-        MediaPacket(au2_handle, buf, len);
+void GstAudioOutput::SetVolumeAUD(double volume) {
+    if (volume_aud) {
+        g_object_set(volume_aud, "volume", volume, nullptr);
     }
 }
 
-void PulseAudioOutput::MediaPacket(pa_simple* stream, const byte * buf, int len)
+void GstAudioOutput::SetVolumeAUD1(double volume) {
+    if (volume_au1) {
+        g_object_set(volume_au1, "volume", volume, nullptr);
+    }
+}
+
+GstAudioOutput::~GstAudioOutput()
 {
-    if (pa_simple_write(stream, buf, len, &error) < 0) {
-        loge("Error to write stream: %s\n", error);
+    // Stop and cleanup pipelines
+    if (pipeline) {
+        gst_element_set_state(pipeline, GST_STATE_NULL);
+        gst_object_unref(pipeline);
+    }
+    if (appsrc_au1) {
+        gst_element_set_state(appsrc_au1, GST_STATE_NULL);
+        gst_object_unref(appsrc_au1);
+    }
+    if (appsrc_aud) {
+        gst_element_set_state(appsrc_aud, GST_STATE_NULL);
+        gst_object_unref(appsrc_aud);
+    }
+    if (volume_au1) {
+        gst_object_unref(volume_au1);
+    }
+    if (volume_aud) {
+        gst_object_unref(volume_aud);
+    }
+}
+
+void GstAudioOutput::MediaPacketAUD(uint64_t timestamp, const byte *buf, int len)
+{
+    if (appsrc_aud) {
+        MediaPacket(appsrc_aud, buf, len);
+    }
+}
+
+void GstAudioOutput::MediaPacketAU1(uint64_t timestamp, const byte *buf, int len)
+{
+    if (appsrc_au1) {
+        MediaPacket(appsrc_au1, buf, len);
+    }
+}
+
+void GstAudioOutput::MediaPacket(GstElement *appsrc, const byte *buf, int len)
+{
+    GstBuffer *gst_buffer = gst_buffer_new_allocate(nullptr, len, nullptr);
+    gst_buffer_fill(gst_buffer, 0, buf, len);
+    
+    GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(appsrc), gst_buffer);
+    if (ret != GST_FLOW_OK) {
+        loge("Failed to push buffer: %d\n", ret);
     }
 }
 

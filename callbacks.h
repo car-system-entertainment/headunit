@@ -7,8 +7,9 @@
 #include <gst/app/gstappsink.h>
 
 class VideoOutput;
-class PulseAudioOutput;
-class AudioOutput;
+class GstAudioOutput;
+// class PulseAudioOutput;
+// class AudioOutput;
 
 enum class VIDEO_FOCUS_REQUESTOR {
     HEADUNIT, // headunit (we) has requested video focus
@@ -17,7 +18,7 @@ enum class VIDEO_FOCUS_REQUESTOR {
 
 class DesktopEventCallbacks : public IHUConnectionThreadEventCallbacks {
         std::unique_ptr<VideoOutput> videoOutput;
-        std::unique_ptr<PulseAudioOutput> audioOutput;
+        std::unique_ptr<GstAudioOutput> audioOutput;
 
         MicInput micInput;
 public:

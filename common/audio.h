@@ -3,6 +3,9 @@
 #include <thread>
 #include <pulse/simple.h>
 #include <pulse/error.h>
+#include <gst/gst.h>
+#include <gst/app/gstappsrc.h>
+#include <cmath>
 
 #include "hu_uti.h"
 #include "hu_aap.h"
@@ -21,20 +24,26 @@ public:
     void MediaPacketAU1(uint64_t timestamp, const byte * buf, int len);
 };
 
-class PulseAudioOutput : public AudioOutput
-{
-    pa_simple* au1_handle = nullptr;
-    pa_simple* au2_handle = nullptr;
-    int error = 0;
+class GstAudioOutput {
 
-    void MediaPacket(pa_simple* stream, const byte * buf, int len);
+private:
+    GstElement *pipeline;
+    GstElement *appsrc_au1;
+    GstElement *appsrc_aud;
+    GstElement *volume_au1;
+    GstElement *volume_aud;
+
+    void MediaPacket(GstElement *appsrc, const byte *buf, int len);
 
 public:
-    PulseAudioOutput(const char* outDev = "default");
-    ~PulseAudioOutput();
-
-    void MediaPacketAUD(uint64_t timestamp, const byte * buf, int len);
-    void MediaPacketAU1(uint64_t timestamp, const byte * buf, int len);
+    GstAudioOutput(const char *outDev = "default");
+    ~GstAudioOutput();
+    
+    void MediaPacketAUD(uint64_t timestamp, const byte *buf, int len);
+    void MediaPacketAU1(uint64_t timestamp, const byte *buf, int len);
+    
+    void SetVolumeAUD(double volume);
+    void SetVolumeAUD1(double volume);
 };
 
 class MicInput

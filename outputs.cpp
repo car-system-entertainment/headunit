@@ -74,7 +74,7 @@ gboolean VideoOutput::bus_callback(GstBus *bus, GstMessage *message, gpointer *p
         break;
 
     case GST_MESSAGE_STATE_CHANGED:
-        printf("pipeline state change: \n");
+        // printf("pipeline state change: \n");
         break;
 
     default:
@@ -122,17 +122,17 @@ gboolean VideoOutput::lvgl_bus_callback(GstBus *bus, GstMessage *message) {
             g_error_free(err);
             g_free(debug);
         }
-        break;
+            break;
 
         case GST_MESSAGE_EOS:
             g_print("End of stream\n");
-        printf("End of stream\n");
-        g_main_loop_quit(gst_app.loop);
-        break;
+            printf("End of stream\n");
+            g_main_loop_quit(gst_app.loop);
+            break;
 
         case GST_MESSAGE_STATE_CHANGED:
-            printf("pipeline state change: \n");
-        break;
+            // printf("pipeline state change: \n");
+            break;
 
         default:
             break;
@@ -285,8 +285,6 @@ gboolean VideoOutput::sdl_poll_event() {
                         {
                             s.hu_aap_enc_send_message(0, AA_CH_SEN, HU_SENSOR_CHANNEL_MESSAGE::SensorEvent, sensorEvent);
                         });
-
-                        printf("Sending fake location.");
                     }
                 } else if (key->keysym.sym == SDLK_F3) {
                     if (event.type == SDL_KEYUP) {
@@ -298,8 +296,6 @@ gboolean VideoOutput::sdl_poll_event() {
                         {
                             s.hu_aap_enc_send_message(0, AA_CH_NOT, HU_GENERIC_NOTIFICATIONS_CHANNEL_MESSAGE::GenericNotificationRequest, notificationReq);
                         });
-
-                        printf("Sending notification.");
                     }
                 }
 
