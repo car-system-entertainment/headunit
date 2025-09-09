@@ -5,5 +5,5 @@
 #pragma pack(1)
 
 typedef struct HUStateResponse {
-    HU_STATE state;
+    uint8_t state;
 } HUStateResponse;

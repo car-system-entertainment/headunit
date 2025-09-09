@@ -125,7 +125,6 @@ void *task_command_server(void *args) {
 
                         case EV_STATE_REQUEST: {
                             uint16_t len = sizeof(HeadunitMessage) + sizeof(HUStateResponse);
-                            printf("request headunit state\n");
                             HeadunitMessage *response = (HeadunitMessage *) malloc(len);
                             response->header.device = APP_HU;
                             response->header.action = EV_STATE_REQUEST;

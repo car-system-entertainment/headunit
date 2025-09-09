@@ -49,16 +49,16 @@ typedef enum MediaAudioChannel {
 } MediaAudioChannel;
 
 typedef struct HeadunitHeader {
-    DEVICE device;
-    ACTION action;
-    ACTION_TYPE action_type;
+    uint8_t device;
+    uint8_t action;
+    uint8_t action_type;
     uint16_t size;
 } HeadunitHeader;
 
 typedef struct HeadunitMessage {
     HeadunitHeader header;
     uint8_t payload[];
-} ServerRequest;
+} HeadunitMessage;
 
 typedef struct TouchEvent {
     uint16_t width;
