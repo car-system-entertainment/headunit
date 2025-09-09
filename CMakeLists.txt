@@ -43,7 +43,16 @@ pkg_check_modules(
     libpulse-simple
 )
 
-include_directories(${PKG_DEPS_INCLUDE_DIRS} ${HEADUNIT_PATH}/hu ${HEADUNIT_PATH}/common ${HEADUNIT_PATH}/hu/generated.${ARCH})
+include_directories(
+    ${PKG_DEPS_INCLUDE_DIRS}
+    ${HEADUNIT_PATH}/hu
+    ${HEADUNIT_PATH}/common
+    ${HEADUNIT_PATH}/hu/generated.${ARCH}
+    ${HEADUNIT_PATH}/audio
+    ${HEADUNIT_PATH}/server
+    ${HEADUNIT_PATH}
+)
+
 link_directories(${PKG_DEPS_LIBRARY_DIRS})
 
 # Definir flags de compilação
@@ -62,10 +71,11 @@ set(SOURCES
         ${HEADUNIT_PATH}/common/glib_utils.cpp
         ${HEADUNIT_PATH}/common/command_server.cpp
         ${HEADUNIT_PATH}/common/web++/web++.cpp
+        ${HEADUNIT_PATH}/audio/audio_server.cpp
+        ${HEADUNIT_PATH}/server/server.cpp
         ${HEADUNIT_PATH}/bt/ub_bluetooth.cpp
         ${HEADUNIT_PATH}/outputs.cpp
         ${HEADUNIT_PATH}/callbacks.cpp
-        ${HEADUNIT_PATH}/server.cpp
 )
 
 # Gerar arquivos Protocol Buffers

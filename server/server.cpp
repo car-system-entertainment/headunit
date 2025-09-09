@@ -1,14 +1,6 @@
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <pthread.h>
-
-#include "hu_uti.h"
-#include "hu_aap.h"
-#include "hu_uti.h"
 #include "server.h"
-#include "main.h"
+#include "server_response.h"
+
 
 #define PORT 5000
 #define BUFFER_SIZE 1024
@@ -47,9 +39,9 @@ HU_STATE aa_get_status(HUServer *headunit) {
     return headunit->hu_app_get_state();
 }
 
-void *event_command_server(void *args) {
+void *task_command_server(void *args) {
     HUServer *headunit = (HUServer*) args;
-    int server_fd, new_socket;
+    int server_fd, client;
     struct sockaddr_in address;
 
     int opt = 1;
@@ -92,7 +84,7 @@ void *event_command_server(void *args) {
 
     while (1) {
         // Aceitando uma nova conexão
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
+        if ((client = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
             perror("Accept failed");
             continue;
         }
@@ -100,53 +92,66 @@ void *event_command_server(void *args) {
         while (1)
         {
             // Recebendo dados do cliente
-            int len = read(new_socket, buffer, BUFFER_SIZE);
+            int len = read(client, buffer, BUFFER_SIZE);
             
             if (len > 0) {
                 IHUAnyThreadInterface* g_hu = nullptr;
                 g_hu = &headunit->GetAnyThreadInterface();
 
-                if (buffer[0] == 0x55 && buffer[1] == 0x01 && ((buffer[3] << 8) + buffer[2] == 0x0D)) {
-                    TouchEvent touch_event;
-                    touch_event.action = buffer[4];
-                        
-                    memcpy(&touch_event.width, &buffer[5], sizeof(uint16_t));
-                    memcpy(&touch_event.heigth, &buffer[7], sizeof(uint16_t));
-                    memcpy(&touch_event.pos_x, &buffer[9], sizeof(float));
-                    memcpy(&touch_event.pos_y, &buffer[13], sizeof(float));
+                HeadunitMessage *headunit_message = (HeadunitMessage*) buffer;
 
-                    // mouse down
-                    if (touch_event.action == 0x01) {
-                        printf("mouse press event: dx -> %f, dy -> %f\n", touch_event.pos_x, touch_event.pos_y);
-                        aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_PRESS, &touch_event);
-                    }
-                    // mouse release
-                    else if (touch_event.action == 0x02)
+                if (headunit_message->header.device == APP_UI && headunit_message->header.action_type == REQUEST) {
+                    switch (headunit_message->header.action)
                     {
-                        printf("mouse release event: dx -> %f, dy -> %f\n", touch_event.pos_x, touch_event.pos_y);
-                        aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_RELEASE, &touch_event);
+                        case EV_MOUSE_PRESS: {
+                            TouchEvent *touch_event = (TouchEvent*) headunit_message->payload;
+                            printf("mouse press event dx: %f, dy: %f\n", touch_event->pos_x, touch_event->pos_y);
+                            aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_PRESS, touch_event);
+                            break;
+                        }
+
+                        case EV_MOUSE_RELEASE: {
+                            TouchEvent *touch_event = (TouchEvent*) headunit_message->payload;
+                            printf("mouse release event dx: %f, dy: %f\n", touch_event->pos_x, touch_event->pos_y);
+                            aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_RELEASE, touch_event);
+                            break;
+                        }
+                        case EV_MOUSE_MOVE: {
+                            TouchEvent *touch_event = (TouchEvent*) headunit_message->payload;
+                            printf("mouse move event dx: %f, dy: %f\n", touch_event->pos_x, touch_event->pos_y);
+                            aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_DRAG, touch_event);
+                            break;
+                        }
+
+                        case EV_STATE_REQUEST: {
+                            uint16_t len = sizeof(HeadunitMessage) + sizeof(HUStateResponse);
+                            HeadunitMessage *response = (HeadunitMessage *) malloc(len);
+                            response->header.device = APP_HU;
+                            response->header.action = EV_STATE_REQUEST;
+                            response->header.action_type = RESPONSE;
+                            response->header.size = sizeof(HUStateResponse);
+
+                            HUStateResponse *state = (HUStateResponse *) response->payload;
+                            state->state = aa_get_status(headunit);
+
+                            send(client, (uint8_t *) response, len, 0);
+                            free(response);
+                            break;
+                        }
+
+                        case EV_MEDIA_START:
+                            break;
+
+                        case EV_MEDIA_STOP:
+                            break;
+
+                        default:
+                            break;
                     }
-                    //mouse drag
-                    else if (touch_event.action == 0x03)
-                    {
-                        printf("mouse drag event: dx -> %f, dy -> %f\n", touch_event.pos_x, touch_event.pos_y);
-                        aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_DRAG, &touch_event);
-                    }
-                }
-                else if (buffer[0] == 0x55 && buffer[1] == 0x02 && g_hu) {
-                    HU_STATE state = aa_get_status(headunit);
-                    unsigned char message[5];
-                    message[0] = 0x55; // header
-                    message[1] = 0x01; // status
-                    message[2] = 0x00; // MSB payload
-                    message[3] = 0x01; // LSB
-                    message[4] = state;
-                    
-                    send(new_socket, &message, sizeof(message), 0);
                 }
             }
             else {
-                close(new_socket);
+                close(client);
                 break;
             }
             memset(buffer, 0, BUFFER_SIZE);

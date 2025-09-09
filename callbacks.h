@@ -4,10 +4,12 @@
 #include <gst/gst.h>
 #include "audio.h"
 #include "command_server.h"
+#include "audio/audio_server.h"
 #include <gst/app/gstappsink.h>
 
 class VideoOutput;
-class GstAudioOutput;
+class AudioServer;
+
 // class PulseAudioOutput;
 // class AudioOutput;
 
@@ -18,7 +20,7 @@ enum class VIDEO_FOCUS_REQUESTOR {
 
 class DesktopEventCallbacks : public IHUConnectionThreadEventCallbacks {
         std::unique_ptr<VideoOutput> videoOutput;
-        std::unique_ptr<GstAudioOutput> audioOutput;
+        std::unique_ptr<AudioServer> audioOutput;
 
         MicInput micInput;
 public:

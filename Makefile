@@ -27,12 +27,13 @@ SRCS += $(TOP)/common/audio.cpp
 SRCS += $(TOP)/common/glib_utils.cpp
 SRCS += $(TOP)/common/command_server.cpp
 SRCS += $(TOP)/common/web++/web++.cpp
-
+SRCS += $(TOP)/audio/audio_server.cpp
+SRCS += $(TOP)/server/server.cpp
 SRCS += bt/ub_bluetooth.cpp
+
 SRCS += main.cpp
 SRCS += outputs.cpp
 SRCS += callbacks.cpp
-SRCS += server.cpp
 
 OBJS_x64 = $(addsuffix .x64.o, $(basename $(SRCS)))
 OBJS_arm = $(addsuffix .arm.o, $(basename $(SRCS)))

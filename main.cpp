@@ -14,7 +14,7 @@
 #include "main.h"
 #include "outputs.h"
 #include "callbacks.h"
-#include "server.h"
+#include "server/server.h"
 
 gst_app_t gst_app;
 
@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
         gst_init(NULL, NULL);
         struct sigaction action;
         sigaction(SIGINT, NULL, &action);
+        
         if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
             SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
             return 1;
@@ -70,7 +71,7 @@ int main(int argc, char *argv[]) {
         DesktopEventCallbacks callbacks;
         HUServer headunit(callbacks, settings);
 
-        if (pthread_create(&server_thread, NULL, event_command_server, &headunit) != 0) {
+        if (pthread_create(&server_thread, NULL, task_command_server, &headunit) != 0) {
             perror("Failed to create thread");
             return EXIT_FAILURE;
         }

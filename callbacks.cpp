@@ -9,6 +9,7 @@ DesktopEventCallbacks::DesktopEventCallbacks() :
     videoFocus(false),
     audioFocus(false)
 {
+    audioOutput.reset(new AudioServer());
 }
 
 DesktopEventCallbacks::~DesktopEventCallbacks() {
@@ -66,15 +67,15 @@ void DesktopEventCallbacks::AudioFocusRequest(int chan, const HU::AudioFocusRequ
     run_on_main_thread([this, chan, request](){
         HU::AudioFocusResponse response;
         if (request.focus_type() == HU::AudioFocusRequest::AUDIO_FOCUS_RELEASE) {
-            audioOutput.reset();
+            // audioOutput.reset();
             response.set_focus_type(HU::AudioFocusResponse::AUDIO_FOCUS_STATE_LOSS);
-            audioFocus = false;
+            // audioFocus = false;
         } else {
-            if (!audioOutput) {
-                audioOutput.reset(new GstAudioOutput());
-            }
+            // if (!audioOutput) {
+            //     audioOutput.reset(new GstAudioOutput());
+            // }
             response.set_focus_type(HU::AudioFocusResponse::AUDIO_FOCUS_STATE_GAIN);
-            audioFocus = true;
+            // audioFocus = true;
         }
 
         g_hu->hu_queue_command([chan, response](IHUConnectionThreadInterface & s) {
