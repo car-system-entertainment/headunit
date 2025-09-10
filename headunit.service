@@ -1,0 +1,22 @@
+[Unit]
+Description=Headunit Service
+After=network.target
+
+[Service]
+# Caminho do executável ou script
+ExecStart=/usr/local/bin/headunit
+
+# Usuário e grupo que vão rodar o serviço
+User=root
+Group=root
+
+# Reiniciar automaticamente se cair
+Restart=always
+RestartSec=5
+
+# Redireciona logs para journald
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
