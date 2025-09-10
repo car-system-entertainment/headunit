@@ -105,20 +105,20 @@ void *task_command_server(void *args) {
                     {
                         case EV_MOUSE_PRESS: {
                             TouchEvent *touch_event = (TouchEvent*) headunit_message->payload;
-                            printf("mouse press event dx: %f, dy: %f\n", touch_event->pos_x, touch_event->pos_y);
+                            // printf("mouse press event dx: %f, dy: %f\n", touch_event->pos_x, touch_event->pos_y);
                             aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_PRESS, touch_event);
                             break;
                         }
 
                         case EV_MOUSE_RELEASE: {
                             TouchEvent *touch_event = (TouchEvent*) headunit_message->payload;
-                            printf("mouse release event dx: %f, dy: %f\n", touch_event->pos_x, touch_event->pos_y);
+                            // printf("mouse release event dx: %f, dy: %f\n", touch_event->pos_x, touch_event->pos_y);
                             aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_RELEASE, touch_event);
                             break;
                         }
                         case EV_MOUSE_MOVE: {
                             TouchEvent *touch_event = (TouchEvent*) headunit_message->payload;
-                            printf("mouse move event dx: %f, dy: %f\n", touch_event->pos_x, touch_event->pos_y);
+                            // printf("mouse move event dx: %f, dy: %f\n", touch_event->pos_x, touch_event->pos_y);
                             aa_touch_event(headunit, HU::TouchInfo::TOUCH_ACTION_DRAG, touch_event);
                             break;
                         }

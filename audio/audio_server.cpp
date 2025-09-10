@@ -25,8 +25,9 @@ AudioServer::AudioServer()
         "audioconvert ! "
         "audioresample ! "
         "queue max-size-buffers=0 max-size-time=0 max-size-bytes=0 ! "
-        "mixer. "
+        "mixer. ";
 
+        /*
         "filesrc name=file_src location=/dev/null ! "
         "decodebin name=decoder ! "
         "audioconvert ! "
@@ -34,7 +35,7 @@ AudioServer::AudioServer()
         "volume name=file_vol ! "
         "queue max-size-buffers=0 max-size-time=0 max-size-bytes=0 ! "
         "mixer.";
-
+        */
 
     GError *error = nullptr;
     pipeline = gst_parse_launch(pipeline_str, &error);
@@ -46,11 +47,11 @@ AudioServer::AudioServer()
 
     aa_src_channel_1 = gst_bin_get_by_name(GST_BIN(pipeline), "aa_src_1");
     aa_src_channel_2 = gst_bin_get_by_name(GST_BIN(pipeline), "aa_src_2");
-    file_src = gst_bin_get_by_name(GST_BIN(pipeline), "file_src");
+    // file_src = gst_bin_get_by_name(GST_BIN(pipeline), "file_src");
 
     vol_aa_channel_1 = gst_bin_get_by_name(GST_BIN(pipeline), "aa_vol_1");
     vol_aa_channel_2 = gst_bin_get_by_name(GST_BIN(pipeline), "aa_vol_2");
-    vol_file_src = gst_bin_get_by_name(GST_BIN(pipeline), "file_vol");
+    // vol_file_src = gst_bin_get_by_name(GST_BIN(pipeline), "file_vol");
 
     g_object_set(aa_src_channel_1,
         "stream-type", 0, // GST_APP_STREAM_TYPE_STREAM
@@ -77,6 +78,8 @@ AudioServer::AudioServer()
     if (ret == GST_STATE_CHANGE_FAILURE) {
         printf("Unable to set the pipeline to the playing state\n");
     }
+
+    printf("Audio server initialized\n");
 }
 
 void AudioServer::wrapper_decoder_pad_added(GstElement *decoder, GstPad *pad, gpointer data) {
